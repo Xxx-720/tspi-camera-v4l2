@@ -8,8 +8,8 @@
 #include "v4l2_app.h"
 
 #define DEVICE_NAME "/dev/video0"
-#define VIDEO_WIDTH 640
-#define VIDEO_HEIGHT 480
+#define VIDEO_WIDTH 1920
+#define VIDEO_HEIGHT 1080
 #define REQ_BUFF_COUNT 4
 #define MAX_PLANES 8
 
@@ -275,3 +275,39 @@ void v4l2_start()
 
     printf("========V4L2的多平面缓冲区设置========\n");
 }
+
+
+void v4l2_stop()
+{
+    printf("\n*********V4L2的关闭********\n");
+
+    enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+    if((ioctl(video_fd, VIDIOC_STREAMOFF, &type)) < 0)
+    {
+        perror("    无法关闭视频流\n");
+    }
+    if(buffers != NULL)
+    {
+        for(size_t i=0; i<REQ_BUFF_COUNT; i++)
+        {
+            for(size_t j=0; j<buffers[i].n_planes; j++)
+            {
+                munmap(buffers[i].start[j], buffers[i].length[j]);
+                printf("    释放映射%p\n", buffers[i].start[j]);
+            }
+            free(buffers[i].plane);
+            free(buffers[i].start);
+            free(buffers[i].length);
+
+        }
+        printf("    全部释放完毕\n");
+    }
+    free(buffers);
+
+
+    printf("========V4L2的关闭========\n");
+
+    close(video_fd);
+}
+
+

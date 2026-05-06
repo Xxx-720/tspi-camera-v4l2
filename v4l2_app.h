@@ -17,7 +17,7 @@ extern "C"
 
 void capturing(unsigned char** origin_data);
 void v4l2_start();
-
+void v4l2_stop();
 
 #ifdef __cplusplus
 }

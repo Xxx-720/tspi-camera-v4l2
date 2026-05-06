@@ -67,6 +67,6 @@ private:
     int fps;
 
     CameraThread* m_camThread;
-
+    QImage m_lastframe;
 };
 #endif // CAM_H

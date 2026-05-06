@@ -121,6 +121,9 @@ color: rgb(255, 255, 255);</string>
      <height>480</height>
     </rect>
    </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: rgb(0, 0, 0);</string>
+   </property>
    <property name="text">
     <string/>
    </property>

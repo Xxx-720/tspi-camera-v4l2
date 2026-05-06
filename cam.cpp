@@ -22,11 +22,9 @@ cam::cam(QWidget *parent)
     //启动线程
     m_camThread->start();
 
-
-    //信号槽，连接拍照和保存
-//    connect(imgCapture, &QCameraImageCapture::imageCaptured, this, &cam::save_pic);
-
+    //当帧准备好直接显示在Label上，因为widget没有setPixmap
     connect(m_camThread, &CameraThread::frameReady, this, [this](const QImage &img){
+            m_lastframe = img;
             QPixmap pixmap = QPixmap::fromImage(img);
             ui->label->setPixmap(pixmap.scaled(ui->label->size(),
                       Qt::KeepAspectRatio,
@@ -139,12 +137,12 @@ void cam::update_fps()
 
 void cam::on_take_photo_pressed()
 {
-//    if(camera->state() != QCamera::ActiveState) {
-//        qDebug() << "相机未启动，无法拍照" << endl;
-//        return;
-//    }
-//    //触发拍照
-//    imgCapture->capture();
+    //直接取最新的一帧
+    if(!m_lastframe.isNull())
+    {
+        save_pic(0, m_lastframe);
+    }
+
     qDebug() << "take a photo" << endl;
 }
 
@@ -171,6 +169,7 @@ void cam::camera_restart()
 
 //    camera->start();
 
+    m_camThread->start();
 }
 
 void cam::on_album_pressed()
@@ -181,6 +180,8 @@ void cam::on_album_pressed()
 //    camera->stop();
 //    viewfinder->hide();
 
+    m_camThread->stop();
+
     // 关闭相册后重新启动相机
     connect(d, &Dialog::finished, this, &cam::camera_restart);
 
@@ -190,10 +191,5 @@ void cam::on_album_pressed()
 
 //    d->show();
     d->showFullScreen();
-    // camera->stop();
-    // viewfinder->close();
 
-    // delete camera;
-    // delete imgCapture;
-    // delete viewfinder;
 }

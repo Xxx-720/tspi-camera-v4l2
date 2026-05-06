@@ -13,6 +13,7 @@ public:
     void stop();
 
 signals:
+    //帧准备好信号
     void frameReady(const QImage &frame);
 
 protected:

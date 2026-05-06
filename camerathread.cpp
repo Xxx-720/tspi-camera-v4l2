@@ -2,8 +2,8 @@
 #include "v4l2_app.h"
 
 
-#define IMG_WIDTH 640
-#define IMG_HIGHT 480
+#define IMG_WIDTH 1920
+#define IMG_HIGHT 1080
 
 CameraThread::CameraThread()
 {
@@ -12,6 +12,13 @@ CameraThread::CameraThread()
 
 void CameraThread::stop()
 {
+    m_running = false;
+
+    //等待线程退出
+    wait();
+
+    v4l2_stop();
+
 
 }
 
@@ -36,6 +43,7 @@ void CameraThread::nv21_to_rgb(unsigned char* nv12, QImage &rgb)
             //U分量
             int u = vu[(i/2)*(IMG_WIDTH/2)*2 + (j/2)*2 + 1] - 128;
 
+            //公式
             int r = yy + 1.370705f * v;
             int g = yy - 0.698001f * v - 0.337633f * u;
             int b = yy + 1.732446f * u;
@@ -55,6 +63,8 @@ void CameraThread::nv21_to_rgb(unsigned char* nv12, QImage &rgb)
 
 void CameraThread::run()
 {
+    m_running = true;
+
     //启动v4l2
     v4l2_start();
 
