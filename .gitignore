@@ -1,0 +1,20 @@
+# Build artifacts
+*.o
+Makefile
+*.pro.user
+.qmake.stash
+
+# Qt MOC generated files
+moc_*.cpp
+moc_predefs.h
+ui_*.h
+
+# Executable
+my_project
+project/my_project
+
+# Image files (not tracked)
+project/img/
+
+# IDE / local config
+.omo/
