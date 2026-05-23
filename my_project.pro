@@ -18,6 +18,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     camerathread.cpp \
     dialog.cpp \
+    encoder.c \
     main.cpp \
     cam.cpp \
     v4l2_app.c
@@ -26,6 +27,7 @@ HEADERS += \
     cam.h \
     camerathread.h \
     dialog.h \
+    encoder.h \
     v4l2_app.h
 
 FORMS += \
@@ -40,3 +42,40 @@ DEFINES += PROJECT_SOURCE_DIR=\\\"$$PWD\\\"
 
 DISTFILES += \
     img/20260419_153348.jpg
+
+#init
+#INCLUDEPATH += /usr/include \
+#               /usr/arm64-libjpeg/include \
+#               /usr/arm64-ffmpeg/include
+
+#LIBS += -L/usr/arm64-libjpeg/lib \
+#        -L/usr/arm64-ffmpeg/lib \
+#        -ljpeg \
+#        -lswscale \
+#        -lavformat \
+#        -lavcodec \
+#        -lavutil \
+#        -lswresample \
+#        -pthread \
+#        -lm
+
+
+#change
+INCLUDEPATH += /opt/aarch64-ffmpeg/include \
+               /opt/aarch64-libs/include
+
+LIBS += -L/opt/aarch64-ffmpeg/lib \
+        -L/opt/aarch64-libs/lib \
+        -lavformat \
+        -lavcodec \
+        -lavutil \
+        -lswscale \
+        -lswresample \
+        -lrockchip_mpp \
+        -lrga \
+        -pthread \
+        -lm \
+        -ldl \
+        -ldrm
+
+

@@ -19,8 +19,12 @@ cam::cam(QWidget *parent)
     cam::album_init();
     
     m_camThread = new CameraThread();
-    //启动线程
+    //启动预览线程
     m_camThread->start();
+
+
+    m_recordThread = new RecordThread(m_camThread);
+
 
     //当帧准备好直接显示在Label上，因为widget没有setPixmap
     connect(m_camThread, &CameraThread::frameReady, this, [this](const QImage &img){
@@ -148,27 +152,27 @@ void cam::on_take_photo_pressed()
 
 void cam::on_take_video_pressed()
 {
+    //按下录像
+    if(!m_recordThread->m_recording)
+    {
+        printf("11*********开始录像********\n");
+        ui->take_video->setText("停止");
+        m_recordThread->startRecord();
+    }
+    else    //停止录像
+    {
+        printf("*********停止录像********\n");
+        ui->take_video->setText("录像");
+        m_recordThread->stopRecord();
+    }
+//    m_recordThread->m_recording = !(m_recordThread->m_recording);
 
 }
 
 
 void cam::camera_restart()
 {
-//    if(!camera)
-//    {
-//        camera = new QCamera(this);
-//    }
-
-//    cam::album_init();
-////    if(!viewfinder)
-////    {
-////        viewfinder = new QVideoWidget(ui->widget);
-////    }
-////    viewfinder->show();
-////    camera->setViewfinder(viewfinder);   // 重新绑定显示窗口
-
-//    camera->start();
-
+    cam::album_init();
     m_camThread->start();
 }
 

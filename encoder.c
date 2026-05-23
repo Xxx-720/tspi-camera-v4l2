@@ -21,45 +21,62 @@
 #define FPS              30
 
 
-struct ffmpeg_ctx
-{
-    AVFormatContext *fmt_ctx;
-    // AVStream *stream;
-    AVCodecContext *codec_ctx;
-    AVFrame *frame;
-    AVPacket *pkt;
-    struct SwsContext *sws_ctx;
-    int pts;
-};
+struct ffmpeg_ctx prv_ctx = {.fmt_ctx = NULL};
 
-struct ffmpeg_ctx prv_ctx;
+
+void show_encoder()
+{
+    void *i = NULL;
+    const AVCodec *codec = NULL;
+
+    printf("===== encoder list =====\n");
+
+    while ((codec = av_codec_iterate(&i)))
+    {
+        if (av_codec_is_encoder(codec))
+        {
+            printf("%s\n", codec->name);
+        }
+    }
+}
 
 
 void encode_init(char *name)
 {
     printf("1. 编码器初始化\n");
     
+    prv_ctx.pts = 0;
+
     int ret;
     //找到编码器H.264
-    AVCodec* codec = avcodec_find_encoder(AV_CODEC_ID_H264); 
-    // AVCodec* codec = avcodec_find_encoder_by_name(encoder_name); 
+//    AVCodec* codec = avcodec_find_encoder(AV_CODEC_ID_H264);
+    AVCodec* codec = avcodec_find_encoder_by_name("h264_rkmpp");
     if(!codec)
     {
-        perror("    找不到对于编码器\n");
-        return -1;
+        printf("    找不到对应编码器\n");
+        return ;
     }
+    printf("    找到编码器\n");
+
+//    for (int i = 0; codec->pix_fmts[i] != AV_PIX_FMT_NONE; i++)
+//    {
+//        printf("%s\n", av_get_pix_fmt_name(codec->pix_fmts[i]));
+//    }
 
     // 创建输出的上下文
-    if((avformat_alloc_output_context2(prv_ctx.fmt_ctx, NULL, NULL, name)) < 0)
+    if((avformat_alloc_output_context2(&prv_ctx.fmt_ctx, NULL, NULL, name)) < 0)
     {
         printf("    输出上下文创建失败\n");
     }
+    printf("    输出上下文创建成功\n");
+
     //添加流 -> 流的 time_base 必须和编码器一致
     AVStream *video_stream = avformat_new_stream(prv_ctx.fmt_ctx, codec);
     if(video_stream == NULL)
     {
         printf("    创建视频流失败\n");
     }
+    printf("    添加流成功\n");
 
     //创建编码器上下文，用于存放编码参数
     prv_ctx.codec_ctx = avcodec_alloc_context3(codec);
@@ -68,28 +85,40 @@ void encode_init(char *name)
         perror("    allocate error");
         return -1;
     }
+    printf("    创建编码上下文成功\n");
 
     //配置编码参数
     prv_ctx.codec_ctx->width = VIDEO_WIDTH;
     prv_ctx.codec_ctx->height = VIDEO_HEIGHT;
     prv_ctx.codec_ctx->time_base = (AVRational){1, FPS}; //时间帧
     prv_ctx.codec_ctx->framerate = (AVRational){FPS, 1}; //帧率
-    prv_ctx.codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;       //像素格式 -> 决定了下面的原始帧的linesize的每一行数据字节大小
+    prv_ctx.codec_ctx->pix_fmt = AV_PIX_FMT_NV12;       //像素格式 -> 决定了下面的原始帧的linesize的每一行数据字节大小
     prv_ctx.codec_ctx->gop_size = 10;                    //关键帧间隔
     prv_ctx.codec_ctx->max_b_frames = 0;                 //允许多少个B帧 //但是实时视频流不要B帧
     prv_ctx.codec_ctx->bit_rate = 800000;                //码率
+    prv_ctx.codec_ctx->flags |= AV_CODEC_FLAG_LOW_DELAY;
 
     //打开编码器
     ret = avcodec_open2(prv_ctx.codec_ctx, codec, NULL);
     if(ret < 0)
     {
-        perror("    编码器打开失败\n");
+//        printf("    编码器打开失败\n");
+        char errbuf[256];
+
+        av_strerror(ret,
+                    errbuf,
+                    sizeof(errbuf));
+
+        printf("编码器打开失败: %s\n",
+               errbuf);
         return -1;
     }
 
     // 将编码参数复制到流中，配置输出格式
     ret = avcodec_parameters_from_context(video_stream->codecpar, prv_ctx.codec_ctx);
     video_stream->time_base = prv_ctx.codec_ctx->time_base;
+    video_stream->r_frame_rate = prv_ctx.codec_ctx->framerate;
+
     if(ret < 0)
     {
         printf("    复制编码参数到流中失败\n");
@@ -97,7 +126,7 @@ void encode_init(char *name)
     }
 
     // 打开输出文件
-    ret = avio_open(prv_ctx.fmt_ctx->pb, name, AVIO_FLAG_WRITE);
+    ret = avio_open(&prv_ctx.fmt_ctx->pb, name, AVIO_FLAG_WRITE);
     if (ret < 0)
     {
         printf("    打开输出文件失败\n");
@@ -112,10 +141,10 @@ void encode_init(char *name)
     }
 
     //创建一个图像格式转换器
-    prv_ctx.sws_ctx = sws_getContext(
-        VIDEO_WIDTH, VIDEO_HEIGHT, AV_PIX_FMT_NV21,     //源
-        VIDEO_WIDTH, VIDEO_HEIGHT, AV_PIX_FMT_YUV420P,  //目标
-        SWS_BILINEAR, NULL, NULL, NULL);
+//    prv_ctx.sws_ctx = sws_getContext(
+//        VIDEO_WIDTH, VIDEO_HEIGHT, AV_PIX_FMT_NV21,     //源
+//        VIDEO_WIDTH, VIDEO_HEIGHT, AV_PIX_FMT_YUV420P,  //目标
+//        SWS_BILINEAR, NULL, NULL, NULL);
     
     //创建原始帧
     prv_ctx.frame = av_frame_alloc();
@@ -130,7 +159,7 @@ void encode_init(char *name)
     //创建编码数据包
     prv_ctx.pkt = av_packet_alloc();
 
-
+    printf("编码器初始化完成\n");
 
 }
 
@@ -143,27 +172,38 @@ void encoder(unsigned char *buf)
     
     int ret;
     
+
     /**
      * 规定:NV12中Y一个平面，UV一个平面
      * 其中，Y平面数据在最前面，UV紧跟其后
      * 所以，data[0]中存放Y平面数据，直接就是缓冲区地址；而data[1]是存放UV平面数据
      * 需要在起始地址加上Y平面的数据大小，Y平面总数据:宽*高
     */
-    uint8_t *src_data[4] = {
-                            buf,                             //Y平面起始地址
-                            buf + VIDEO_WIDTH*VIDEO_HEIGHT,  //UV平面起始地址
-                            NULL, NULL
-    };
-    int src_linesize[4] = { VIDEO_WIDTH,                        // Y 平面一行有多少字节
-                            VIDEO_WIDTH,                        // UV平面一行有多少字节
-                            0, 0 };
+//    uint8_t *src_data[4] = {
+//                            buf,                             //Y平面起始地址
+//                            buf + VIDEO_WIDTH*VIDEO_HEIGHT,  //UV平面起始地址
+//                            NULL, NULL
+//    };
+//    int src_linesize[4] = { VIDEO_WIDTH,                        // Y 平面一行有多少字节
+//                            VIDEO_WIDTH,                        // UV平面一行有多少字节
+//                            0, 0 };
 
-    sws_scale(prv_ctx.sws_ctx,
-            src_data, src_linesize,
-            0,                                                // 从第 0 行开始转换
-            VIDEO_HEIGHT,                                     //转换全部行，即其高度
-            prv_ctx.frame->data,                              //目标数据
-            prv_ctx.frame->linesize);                         //目标行字节数
+//    sws_scale(prv_ctx.sws_ctx,
+//            src_data, src_linesize,
+//            0,                                                // 从第 0 行开始转换
+//            VIDEO_HEIGHT,                                     //转换全部行，即其高度
+//            prv_ctx.frame->data,                              //目标数据
+//            prv_ctx.frame->linesize);                         //目标行字节数
+
+
+    prv_ctx.frame->data[0] = buf; //Y
+    prv_ctx.frame->data[1] = buf + (VIDEO_WIDTH * VIDEO_HEIGHT);
+    prv_ctx.frame->linesize[0] = VIDEO_WIDTH;
+    prv_ctx.frame->linesize[1] = VIDEO_WIDTH;
+
+    prv_ctx.frame->pts = prv_ctx.pts++;
+//    prv_ctx.frame->pts = prv_ctx.pts * prv_ctx.codec_ctx->time_base.den / FPS;
+    prv_ctx.frame->time_base = prv_ctx.codec_ctx->time_base;
 
 
     //发送原始帧给编码器
@@ -172,8 +212,9 @@ void encoder(unsigned char *buf)
         printf("   发送原始帧给编码器失败\n");
         exit(EXIT_FAILURE); 
     }
+    printf("    发送原始帧成功\n");
 
-    prv_ctx.frame->pts = prv_ctx.pts++;
+
     
     while (ret >= 0) 
     {
@@ -206,6 +247,9 @@ void encoder(unsigned char *buf)
 
         // 释放包
         av_packet_unref(prv_ctx.pkt);
+
+        printf("encoder end while\n");
+
     }
     
 }
@@ -223,132 +267,15 @@ void encode_close()
     av_write_trailer(prv_ctx.fmt_ctx);
     //释放资源
     // fclose(f);
-    avio_context_free(prv_ctx.fmt_ctx->pb);
+    avio_close(prv_ctx.fmt_ctx->pb);
     avformat_free_context(prv_ctx.fmt_ctx);
     avcodec_free_context(&prv_ctx.codec_ctx);
     sws_freeContext(prv_ctx.sws_ctx);
     av_frame_free(&prv_ctx.frame);
     av_packet_free(&prv_ctx.pkt);
 
+    prv_ctx.fmt_ctx = NULL;
+
 }
 
-// int ffmpeg(const char* encoder_name, const char* output_name)
-// {
-//     printf("********ffmpeg的编码设置********\n")
-//     int ret;
-
-//     // //打开输出文件
-//     // FILE* f = fopen(OUTPUT_FILE_NAME, "wb");
-
-
-
-//     AVStream* video_stream;
-//     AVFormatContext* fmt_ctx = NULL;
-    
-//     // mp4_init(&fmt_ctx, codec, codec_ctx, &video_stream, OUTPUT_FILE_NAME);
-    
-//     struct timespec start_time;
-//     clock_gettime(CLOCK_REALTIME, &start_time);
-//     int frame_count = 0;
-
-//     int pts = 0;
-//     printf("1. 开始编码\n");
-//     /**
-//      * 更改条件->触发录像
-//     */
-//     char newname[30];
-//     // while(running)
-//     // {
-//     //     // 不拍 
-//     //     if(!capture)
-//     //     {
-//     //         printf("/****** no ***********/\n");
-//     //         usleep(50000);
-//     //         //停止
-//     //         if(stop_capture)
-//     //         {
-//     //             printf("/****** stop ***********/\n");
-//     //             //冲刷编码器，洗掉剩余数据
-//     //             encode(codec_ctx, NULL, pkt, fmt_ctx, &video_stream);
-
-//     //             /**
-//     //              * 写入文件尾
-//     //             */
-//     //             av_write_trailer(fmt_ctx);
-//     //             //释放资源
-//     //             // fclose(f);
-//     //             avio_closep(&fmt_ctx->pb);
-//     //             avformat_free_context(fmt_ctx);     
-
-//     //             //插入链表
-//     //             Node_insert_front(photo_video_list, newname);
-
-//     //             stop_capture = 0;
-//     //         }   
-//     //         continue;
-//     //     }
-//     //     //新 - 拍
-//     //     else if(capture && new_mp4_flag)
-//     //     {
-//     //         printf("/****** start turn ***********/\n");
-//     //         count ++;
-//     //         sprintf(newname, "%s/%d.mp4", SAVE_DIR_NAME, count);
-//     //         printf("\n%s\n", newname);
-//     //         // 初始化MP4
-//     //         mp4_init(&fmt_ctx, codec, codec_ctx, &video_stream, newname);
-//     //         //
-//     //         // 2 = 0;
-//     //         new_mp4_flag = 0;
-//     //     } 
-
-
-//     //     int found = -1;
-
-//     //     for (size_t i = 0; i < REQ_BUFF_COUNT; i++)
-//     //     {
-//     //         pthread_mutex_lock(&buf[i].mutex);
-//     //         if(buf[i].used == 1)
-//     //         {
-//     //             found = i;
-//     //             // pthread_mutex_unlock(&buf[found].mutex);
-//     //             break;               
-//     //         }
-//     //         pthread_mutex_unlock(&buf[i].mutex);
-//     //     }
-//     //     if (found == -1)
-//     //     {
-//     //         usleep(5000);
-//     //         continue;
-//     //     }
-        
-
-//     //     if (!running) 
-//     //     {
-//     //         pthread_mutex_unlock(&buf[found].mutex);
-//     //         break;
-//     //     }
-
-
-            
-
-//         //设置时间戳
-//         // frame->pts = pts++;
-//         struct timespec curruent_time;
-//         clock_gettime(CLOCK_REALTIME, &curruent_time);
-//         double elapsed_time = (curruent_time.tv_sec - start_time.tv_sec) +
-//                             (curruent_time.tv_nsec - start_time.tv_nsec) / 1e9;
-        
-//         int64_t calculated_pts = (int64_t)(elapsed_time / av_q2d(codec_ctx->time_base));
-//         frame->pts = calculated_pts;
-        
-//         //编码数据
-//         encode(codec_ctx, frame, pkt, fmt_ctx, &video_stream);
-        
-//         buf[found].used = 0;
-//         pthread_mutex_unlock(&buf[found].mutex);
-//         pthread_cond_signal(&buf[found].cond);
-        
-
-//     printf("\n/*************mp4 is save now****************/\n");
-// }
 

@@ -1,15 +1,15 @@
 /*
     该例程是基于 V4L2 框架的多平面摄像头拍照
 
-    摄像头抓取像素格式：NV12
+    摄像头抓取像素格式：NV21
 */
 
 #include <stdio.h>
 #include "v4l2_app.h"
 
 #define DEVICE_NAME "/dev/video0"
-#define VIDEO_WIDTH 1920
-#define VIDEO_HEIGHT 1080
+#define VIDEO_WIDTH  640 //1920
+#define VIDEO_HEIGHT 480 //1080
 #define REQ_BUFF_COUNT 4
 #define MAX_PLANES 8
 
@@ -237,7 +237,7 @@ void v4l2_start()
     // 注意这里使用的是多平面格式
     v4fmt.fmt.pix_mp.width = VIDEO_WIDTH;             // 宽
     v4fmt.fmt.pix_mp.height = VIDEO_HEIGHT;           // 高
-    v4fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV21; // 设置视频采集格式 V4L2_PIX_FMT_MJPEG
+    v4fmt.fmt.pix_mp.pixelformat = V4L2_PIX_FMT_NV12; // 设置视频采集格式 V4L2_PIX_FMT_MJPEG
     // v4fmt.fmt.pix_mp.num_planes = 2;                  // 设置平面数
     // v4fmt.fmt.pix_mp.field = V4L2_FIELD_NONE; //设置采集方式
     // VIDIOC_S_FMT 设置格式

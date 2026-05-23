@@ -68,5 +68,10 @@ private:
 
     CameraThread* m_camThread;
     QImage m_lastframe;
+
+//    bool m_recording = false;
+
+    RecordThread* m_recordThread;
+
 };
 #endif // CAM_H

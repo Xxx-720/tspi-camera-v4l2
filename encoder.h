@@ -15,14 +15,31 @@ extern "C" {
 #include <libswscale/swscale.h>
 
 
+struct ffmpeg_ctx
+{
+    AVFormatContext *fmt_ctx;
+    // AVStream *stream;
+    AVCodecContext *codec_ctx;
+    AVFrame *frame;
+    AVPacket *pkt;
+    struct SwsContext *sws_ctx;
+    int pts;
+};
+
+extern struct ffmpeg_ctx prv_ctx;
+
+void show_encoder();
+void encode_init(char *name);
+void encoder(unsigned char *buf);
+void encode_close();
+
 #ifdef __cplusplus
 }
 #endif
 
 
-void encode_init(char *name);
-void encoder(unsigned char *buf);
-void encode_close();
+
+
 
 
 
