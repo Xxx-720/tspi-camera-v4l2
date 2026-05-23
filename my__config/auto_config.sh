@@ -9,6 +9,9 @@ mkdir /usr/share/fonts
 cp -r /wxq/all/truetype /usr/share/fonts/
 echo "fonts is ok"
 
+mv /wxq/all/librockchip_mpp.so.0 /usr/lib/librockchip_mpp.so.0
+echo "lib is ok"
+
 cp /wxq/all/weston.ini /etc/xdg/weston/weston.ini
 echo "weston.ini replaced"
 
