@@ -42,13 +42,16 @@
 
 ```text
 .
-├── my__config/                 # 开发板一键配置文件（可直接传到板上使用）
+├── 内核和根文件系统镜像/       # 💾 固件镜像
+│   ├── boot.7z                 # 内核镜像（boot）
+│   └── rootfs.7z               # 根文件系统镜像
+├── my__config/                 # ⚙️ 开发板一键配置文件（可直接传到板上使用）
 │   ├── auto.sh                 # rcS 调用的运行脚本
 │   ├── auto_config.sh          # 一键配置脚本
 │   ├── rcS                     # 开机自启脚本
 │   ├── weston.ini              # Weston compositor 配置文件
 │   └── truetype/               # 中文字体文件
-└── project/                    # Qt 相机应用源码
+└── project/                    # 📂 Qt 相机应用源码
     ├── my_project.pro          # qmake 工程文件
     ├── main.cpp                # 🚀 程序入口
     ├── cam.cpp / cam.h         # 🖥 摄像头主界面
