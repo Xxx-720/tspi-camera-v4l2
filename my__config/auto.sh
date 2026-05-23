@@ -4,4 +4,4 @@
 source /etc/profile
 
 echo "Qt start"
-/wxq/all/my_project &
+/my_project &

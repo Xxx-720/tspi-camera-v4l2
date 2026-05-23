@@ -2,7 +2,8 @@
 
 chmod +x /wxq/my__config/auto.sh
 
-chmod +x /wxq/my__config/my_project
+mv /wxq/my__config/my_project /my_project
+chmod +x /my_project
 echo "Qt project is ok"
 
 mkdir /usr/share/fonts
