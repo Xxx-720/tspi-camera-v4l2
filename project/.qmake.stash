@@ -1,0 +1,23 @@
+QMAKE_CXX.QT_COMPILER_STDCXX = 201402L
+QMAKE_CXX.QMAKE_GCC_MAJOR_VERSION = 9
+QMAKE_CXX.QMAKE_GCC_MINOR_VERSION = 4
+QMAKE_CXX.QMAKE_GCC_PATCH_VERSION = 0
+QMAKE_CXX.COMPILER_MACROS = \
+    QT_COMPILER_STDCXX \
+    QMAKE_GCC_MAJOR_VERSION \
+    QMAKE_GCC_MINOR_VERSION \
+    QMAKE_GCC_PATCH_VERSION
+QMAKE_CXX.INCDIRS = \
+    /usr/aarch64-linux-gnu/include/c++/9 \
+    /usr/aarch64-linux-gnu/include/c++/9/aarch64-linux-gnu \
+    /usr/aarch64-linux-gnu/include/c++/9/backward \
+    /usr/lib/gcc-cross/aarch64-linux-gnu/9/include \
+    /usr/aarch64-linux-gnu/include \
+    /usr/include
+QMAKE_CXX.LIBDIRS = \
+    /usr/lib/gcc-cross/aarch64-linux-gnu/9 \
+    /usr/aarch64-linux-gnu/lib \
+    /lib/aarch64-linux-gnu \
+    /lib \
+    /usr/lib/aarch64-linux-gnu \
+    /usr/lib
