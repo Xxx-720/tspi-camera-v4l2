@@ -26,4 +26,4 @@ done
 
 # source /etc/profile
 # /wxq/all/my_project &
-/wxq/all/auto.sh
+/wxq/my__config/auto.sh
