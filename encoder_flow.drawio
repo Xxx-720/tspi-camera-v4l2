@@ -1,0 +1,185 @@
+<mxfile host="65bd71144e">
+    <diagram id="encoder-flow-diagram" name="编码器流程图">
+        <mxGraphModel dx="923" dy="1198" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="960" pageHeight="1600" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="343" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="10" target="202">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="" style="rounded=1;dashed=1;strokeColor=#90A4AE;strokeWidth=2;fillColor=none;verticalAlign=top;align=left;spacingLeft=10;spacingTop=4;" parent="1" vertex="1">
+                    <mxGeometry x="10" y="20" width="940" height="710" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="&lt;b&gt;阶段一：编码器初始化 encode_init()&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#1565C0;" parent="1" vertex="1">
+                    <mxGeometry x="30" y="28" width="400" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="100" value="查找编码器&#xa;avcodec_find_encoder_by_name(&quot;h264_rkmpp&quot;)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="72.5" y="90" width="270" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="334" style="edgeStyle=none;html=1;" edge="1" parent="1" source="313" target="315">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="313" value="创建、添加视频流&lt;br&gt;avformat_new_stream" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="372.5" y="338.5" width="270" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="329" style="edgeStyle=none;html=1;" edge="1" parent="1" source="314" target="316">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="315" value="从编码参数获取必要参数到流中&lt;br&gt;avcodec_parameters_from_context" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="372.5" y="408.5" width="270" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="317" value="创建空的原始帧 &amp;amp; 数据包&lt;br&gt;av_frame_alloc + av_packet_alloc" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="672.5" y="598.5" width="270" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="107" value="打开输出文件&#xa;avio_open" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="672.5" y="456.5" width="270" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="109" value="初始化完成" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4CAF50;strokeColor=#388E3C;fontColor=#FFFFFF;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="372.5" y="680" width="220" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="328" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="312" target="314">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="314" value="配置编码参数&#xa;width/height/time_base/pix_fmt/gop_size/bit_rate" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="72.5" y="248.5" width="270" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="e100-312" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#1565C0;strokeWidth=1.5;" edge="1" parent="1" source="100" target="312">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="208" y="160"/>
+                            <mxPoint x="208" y="160"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="312" value="创建编码器上下文&#xa;avcodec_alloc_context3" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="72.5" y="178.5" width="270" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="338" value="&amp;nbsp;写入文件&lt;br&gt;&amp;nbsp;av_interleaved_write_frame" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="333.95" y="1100" width="250" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="e312-314" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#1565C0;strokeWidth=1.5;" edge="1" parent="1" source="312" target="314">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="340" value="&amp;nbsp;写入完成后释放包&lt;br&gt;av_packet_unref" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="333.95" y="1180" width="250" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="e314-316" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#1565C0;strokeWidth=1.5;" edge="1" parent="1" source="314" target="316">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e314-307" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#1565C0;strokeWidth=1.5;" edge="1" parent="1" source="314" target="307">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e307-313" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#1565C0;strokeWidth=1.5;" edge="1" parent="1" source="307" target="313">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e313-315" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#1565C0;strokeWidth=1.5;" edge="1" parent="1" source="313" target="315">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e315-107" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#1565C0;strokeWidth=1.5;" edge="1" parent="1" source="315" target="107">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e107-319" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#1565C0;strokeWidth=1.5;" edge="1" parent="1" source="107" target="319">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="807" y="513"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e319-317" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#1565C0;strokeWidth=1.5;" edge="1" parent="1" source="319" target="317">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="" style="rounded=1;dashed=1;strokeColor=#90A4AE;strokeWidth=2;fillColor=none;verticalAlign=top;align=left;spacingLeft=10;spacingTop=4;" parent="1" vertex="1">
+                    <mxGeometry x="10" y="745" width="940" height="540" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" value="&lt;b&gt;阶段二：编码一帧 encoder() [循环调用]&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#2E7D32;" parent="1" vertex="1">
+                    <mxGeometry x="30" y="753" width="500" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="202" value="发送原始帧到编码器&#xa;avcodec_send_frame" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="350" y="780" width="260" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="210" value="ret &gt;= 0 ?" style="shape=rhombus;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F9A825;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="400" y="858" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="211" value="返回" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CFD8DC;strokeColor=#607D8B;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="190" y="875" width="90" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="203" value="取出编码后的数据包 AVPacket&#xa;avcodec_receive_packet" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="350" y="970" width="260" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="e210-211" value="否" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#D32F2F;strokeWidth=1.5;fontSize=11;fontStyle=1;labelBackgroundColor=#FFFFFF;" parent="1" source="210" target="211" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e210-203" value="是" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#2E7D32;strokeWidth=1.5;fontSize=11;fontStyle=1;labelBackgroundColor=#FFFFFF;" parent="1" source="210" target="203" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e203-338" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#2E7D32;strokeWidth=1.5;" edge="1" parent="1" source="203" target="338">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="480" y="1100"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e338-340" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#2E7D32;strokeWidth=1.5;" edge="1" parent="1" source="338" target="340">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e340-210" value="循环" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#1B5E20;strokeWidth=2;fontSize=11;fontStyle=1;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="340" target="210">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="690" y="1204"/>
+                            <mxPoint x="690" y="893"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="30" value="" style="rounded=1;dashed=1;strokeColor=#90A4AE;strokeWidth=2;fillColor=none;verticalAlign=top;align=left;spacingLeft=10;spacingTop=4;" parent="1" vertex="1">
+                    <mxGeometry x="10" y="1300" width="940" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="31" value="&lt;b&gt;阶段三：编码结束 encode_close()&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#E65100;" parent="1" vertex="1">
+                    <mxGeometry x="30" y="1308" width="500" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="300" value="冲刷编码器 (刷出剩余数据)&#xa;avcodec_send_frame(NULL)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="350" y="1340" width="260" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="301" value="写入文件尾&#xa;av_write_trailer" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="350" y="1410" width="260" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="302" value="释放资源&#xa;avio_close / avformat_free_context / avcodec_free_context / av_frame_free / av_packet_free" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="350" y="1480" width="260" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="303" value="编码结束" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4CAF50;strokeColor=#388E3C;fontColor=#FFFFFF;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="380" y="1546" width="200" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="e300-301" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#E65100;strokeWidth=1.5;" parent="1" source="300" target="301" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e301-302" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#E65100;strokeWidth=1.5;" parent="1" source="301" target="302" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e302-303" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#E65100;strokeWidth=1.5;" parent="1" source="302" target="303" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e211-300" value="停止编码" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#37474F;strokeWidth=2;fontSize=11;fontStyle=1;labelBackgroundColor=#FFFFFF;dashed=1;" parent="1" source="211" target="300" edge="1">
+                    <mxGeometry x="-0.4002" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="105" y="893"/>
+                            <mxPoint x="105" y="1250"/>
+                            <mxPoint x="480" y="1250"/>
+                        </Array>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="307" value="创建空的输出容器&lt;br&gt;avformat_alloc_output_context2" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="372.5" y="268.5" width="270" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="319" value="&amp;nbsp;写入文件头&lt;br&gt;avformat_write_header" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="672.5" y="528.5" width="270" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="341" style="edgeStyle=none;html=1;" edge="1" parent="1" source="202" target="210">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="316" value="打开编码器&#xa;avcodec_open2" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;fontSize=11;" vertex="1" parent="1">
+                    <mxGeometry x="72.5" y="318.5" width="270" height="48" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
