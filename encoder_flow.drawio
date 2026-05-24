@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="encoder-flow-diagram" name="编码器流程图">
-        <mxGraphModel dx="923" dy="1198" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="960" pageHeight="1600" math="0" shadow="0">
+        <mxGraphModel dx="638" dy="472" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="960" pageHeight="1600" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -97,7 +97,7 @@
                 <mxCell id="202" value="发送原始帧到编码器&#xa;avcodec_send_frame" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontSize=11;" parent="1" vertex="1">
                     <mxGeometry x="350" y="780" width="260" height="48" as="geometry"/>
                 </mxCell>
-                <mxCell id="210" value="ret &gt;= 0 ?" style="shape=rhombus;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F9A825;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                <mxCell id="210" value="AVFrame != NULL ?" style="shape=rhombus;whiteSpace=wrap;html=1;fillColor=#FFF9C4;strokeColor=#F9A825;fontSize=12;fontStyle=1;" parent="1" vertex="1">
                     <mxGeometry x="400" y="858" width="160" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="211" value="返回" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CFD8DC;strokeColor=#607D8B;fontSize=11;" parent="1" vertex="1">
