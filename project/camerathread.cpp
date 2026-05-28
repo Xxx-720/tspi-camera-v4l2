@@ -154,7 +154,7 @@ void RecordThread::run()
 //        capturing(&data);
         encoder(m_camThread->origin_data);
 
-        msleep(33);
+//        msleep(33);
 
     }
 

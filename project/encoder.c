@@ -90,7 +90,7 @@ void encode_init(char *name)
     //配置编码参数
     prv_ctx.codec_ctx->width = VIDEO_WIDTH;
     prv_ctx.codec_ctx->height = VIDEO_HEIGHT;
-    prv_ctx.codec_ctx->time_base = (AVRational){1, FPS}; //时间帧
+    prv_ctx.codec_ctx->time_base = (AVRational){1, 30000}; //时间帧，使用这个好像可以不用在线程中延时
     prv_ctx.codec_ctx->framerate = (AVRational){FPS, 1}; //帧率
     prv_ctx.codec_ctx->pix_fmt = AV_PIX_FMT_NV12;       //像素格式 -> 决定了下面的原始帧的linesize的每一行数据字节大小
     prv_ctx.codec_ctx->gop_size = 10;                    //关键帧间隔
@@ -116,7 +116,7 @@ void encode_init(char *name)
 
     // 将编码参数复制到流中，配置输出格式
     ret = avcodec_parameters_from_context(video_stream->codecpar, prv_ctx.codec_ctx);
-    video_stream->time_base = prv_ctx.codec_ctx->time_base;
+    video_stream->time_base = (AVRational){1, 90000};     //大概有问题prv_ctx.codec_ctx->time_base
     video_stream->r_frame_rate = prv_ctx.codec_ctx->framerate;
 
     if(ret < 0)
@@ -152,12 +152,14 @@ void encode_init(char *name)
     prv_ctx.frame->height = prv_ctx.codec_ctx->height;
     prv_ctx.frame->format = prv_ctx.codec_ctx->pix_fmt;
     // // //少这一行会报错
-    av_frame_get_buffer(prv_ctx.frame, 32);
+    av_frame_get_buffer(prv_ctx.frame, 32);     //申请数据缓冲区
     // frame->linesize[0] = codec_ctx->width; // Y平面  //设置步长，一行图像数据占多少字节，真实内存宽度，不是分辨率宽度
     // frame->linesize[1] = codec_ctx->width; // UV平面 //不同的格式会有不同的平面
     
     //创建编码数据包
     prv_ctx.pkt = av_packet_alloc();
+
+    prv_ctx.start_time = av_gettime();
 
     printf("编码器初始化完成\n");
 
@@ -201,7 +203,12 @@ void encoder(unsigned char *buf)
     prv_ctx.frame->linesize[0] = VIDEO_WIDTH;
     prv_ctx.frame->linesize[1] = VIDEO_WIDTH;
 
-    prv_ctx.frame->pts = prv_ctx.pts++;
+
+    //以真实时间去记录pts
+    int64_t now = av_gettime() - prv_ctx.start_time;
+    prv_ctx.frame->pts = av_rescale_q(now, (AVRational){1, 1000000}, prv_ctx.codec_ctx->time_base);
+
+//    prv_ctx.frame->pts = prv_ctx.pts++;
 //    prv_ctx.frame->pts = prv_ctx.pts * prv_ctx.codec_ctx->time_base.den / FPS;
     prv_ctx.frame->time_base = prv_ctx.codec_ctx->time_base;
 
@@ -235,9 +242,10 @@ void encoder(unsigned char *buf)
 
         /**
          * packet 必须做时间基转换
+         * 将AVPacket的时间基从编码器的时间基转换成流时间基
         */
         av_packet_rescale_ts(prv_ctx.pkt, prv_ctx.codec_ctx->time_base, prv_ctx.fmt_ctx->streams[0]->time_base);
-        
+
         // 将数据包写入文件
         ret = av_interleaved_write_frame(prv_ctx.fmt_ctx, prv_ctx.pkt);
         if(ret < 0)

@@ -23,6 +23,8 @@ struct ffmpeg_ctx
     AVFrame *frame;
     AVPacket *pkt;
     struct SwsContext *sws_ctx;
+
+    int64_t start_time;
     int pts;
 };
 
