@@ -2,6 +2,10 @@
 #include "ui_dialog.h"
 
 #include "cam.h"
+#include "camerathread.h"
+
+
+VideoPlayThread* player;
 
 Dialog::Dialog(QWidget *parent) :
     QDialog(parent),
@@ -27,6 +31,8 @@ Dialog::Dialog(QWidget *parent) :
 
     //加载显示缩略图在左侧
     album_load_image();
+
+
 }
 
 Dialog::~Dialog()
@@ -37,7 +43,6 @@ Dialog::~Dialog()
 void Dialog::show_image()
 {
     // qDebug() << "显示图片" << endl;
-
     // 获取发送信号的按钮
     QPushButton* new_btn = qobject_cast<QPushButton*>(sender());
     if(!new_btn)
@@ -59,15 +64,47 @@ void Dialog::show_image()
     current_img_path = path;
     qDebug() << "current path:" << current_img_path << endl;
 
-    QPixmap pixmap(path);
-    if(pixmap.isNull())
+    if(player)
     {
-        qDebug() << "图片加载失败" << endl;
-        return;
+        player->stopPlay();
+//        player->wait();
+        delete player;
+        player = nullptr;
     }
-    imgLabel->setPixmap(pixmap.scaled(ui->widget->size(),
-                                      Qt::KeepAspectRatio,
-                                      Qt::SmoothTransformation));
+
+    //视频
+    if(path.endsWith(".mp4", Qt::CaseInsensitive) || path.endsWith(".MP4"))
+    {
+
+        printf("视频播放1\n");
+
+//        VideoPlayThread* player = new VideoPlayThread(m_camThread);
+        //获取父窗口中的camThread线程
+        cam* parentCam = qobject_cast<cam*>(this->parentWidget());
+        player = new VideoPlayThread(parentCam->m_camThread);
+        //连接视频更新信号
+        connect(player, &VideoPlayThread::playReady, this, [=](const QImage &img){
+            imgLabel->setPixmap(QPixmap::fromImage(img).scaled(ui->widget->size(),
+                                                               Qt::KeepAspectRatio,
+                                                               Qt::SmoothTransformation));
+        });
+
+        printf("视频播放2\n");
+        player->startPlay(path);
+    }
+    else    //图片
+    {
+        QPixmap pixmap(path);
+        if(pixmap.isNull())
+        {
+            qDebug() << "图片加载失败" << endl;
+            return;
+        }
+        imgLabel->setPixmap(pixmap.scaled(ui->widget->size(),
+                                          Qt::KeepAspectRatio,
+                                          Qt::SmoothTransformation));
+    }
+
     
 }
 
@@ -83,7 +120,7 @@ void Dialog::album_load_image()
     //获取目录下的所有图片
     QStringList filters;
     // 只要这些格式
-    filters << "*.jpg" << "*.jpeg" << "*.png" ;
+    filters << "*.jpg" << "*.jpeg" << "*.png" << "*.mp4";
     dir.setNameFilters(filters);
     //时间排序
     dir.setSorting(QDir::Time);
@@ -100,18 +137,31 @@ void Dialog::album_load_image()
     {
         //获取每一个图片的路径
         QString image_path = info.absoluteFilePath();
-        QPixmap pixmap(image_path);
-
+//        QPixmap pixmap(image_path);
+        QPixmap thumb;
         //缩略图
         QSize iconSize(120, 90);
-        // 保持宽高比进行缩略
-        QPixmap small_photo = pixmap.scaled(iconSize,
-                                            Qt::KeepAspectRatio,
-                                            Qt::SmoothTransformation);
+
+        if(image_path.endsWith(".mp4", Qt::CaseInsensitive))
+        {
+            QImage small_img = VideoPlayThread::albumFirstFrame(image_path);
+            if(!small_img.isNull())
+            {
+                thumb = QPixmap::fromImage(small_img).scaled(120, 90, Qt::KeepAspectRatio);
+            }
+        }
+        else
+        {
+            // 保持宽高比进行缩略
+            thumb = QPixmap(image_path).scaled(iconSize,
+                                                Qt::KeepAspectRatio,
+                                                Qt::SmoothTransformation);
+        }
+
 
         //创建图片按钮，按下就显示图片
         QPushButton* img_btn = new QPushButton(this->ui->scrollAreaWidgetContents);
-        img_btn->setIcon(QIcon(small_photo));
+        img_btn->setIcon(QIcon(thumb));
         img_btn->setIconSize(iconSize);
         img_btn->setStyleSheet("border:none");
         img_btn->setProperty("imagePath", image_path);
@@ -122,10 +172,7 @@ void Dialog::album_load_image()
         // 信号槽，连接按下与显示
         connect(img_btn, &QPushButton::clicked, this, &Dialog::show_image);
     }
-
 }
-
-
 
 
 void Dialog::on_del_clicked()
@@ -176,6 +223,15 @@ void Dialog::on_exit_clicked()
 {
     qDebug() << "exit" << endl;
     //    delete imgLabel;
+
+    //关闭解码线程
+    if(player)
+    {
+        player->stopPlay();
+        player->wait();
+        delete player;
+        player = nullptr;
+    }
 
     this->close();
 }

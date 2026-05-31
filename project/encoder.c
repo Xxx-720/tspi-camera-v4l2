@@ -22,7 +22,7 @@
 
 
 struct ffmpeg_ctx prv_ctx = {.fmt_ctx = NULL};
-
+struct ffmpeg_ctx decoder_ctx = {.fmt_ctx = NULL};
 
 void show_encoder()
 {
@@ -285,5 +285,205 @@ void encode_close()
     prv_ctx.fmt_ctx = NULL;
 
 }
+
+
+void decoder_init(char* name)
+{
+    printf("1. 解码器初始化\n");
+
+    int ret;
+
+    decoder_ctx.fmt_ctx = avformat_alloc_context();  //
+    if (!decoder_ctx.fmt_ctx) {
+        printf("    分配格式上下文失败\n");
+        return;
+    }
+    printf("    分配格式上下文成功\n");
+
+    ret = avformat_open_input(&decoder_ctx.fmt_ctx, name, NULL, NULL);
+    if(ret < 0)
+    {
+        printf("    打开视频文件失败\n");
+        return;
+    }
+    printf("    打开视频文件成功\n");
+
+    ret = avformat_find_stream_info(decoder_ctx.fmt_ctx, NULL);
+    if(ret < 0)
+    {
+        printf("    找不到对应流输入\n");
+        return;
+    }
+    printf("    找到流输入\n");
+
+    for(int i=0; i<decoder_ctx.fmt_ctx->nb_streams; i++)
+    {
+        if(decoder_ctx.fmt_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+        {
+            decoder_ctx.video_index = i;
+            break;
+        }
+    }
+
+    if(decoder_ctx.video_index == -1)
+    {
+        return;
+    }
+
+    //获取对应流的编码参数，以此找到对于的解码器
+    AVCodecParameters* codec_parame = decoder_ctx.fmt_ctx->streams[decoder_ctx.video_index]->codecpar;
+    AVCodec* decodec = avcodec_find_decoder(codec_parame->codec_id);
+
+    decoder_ctx.codec_ctx = avcodec_alloc_context3(decodec);
+    if(!decoder_ctx.codec_ctx)
+    {
+        perror("    allocate error");
+        return -1;
+    }
+
+    ret = avcodec_parameters_to_context(decoder_ctx.codec_ctx, codec_parame);
+    if(ret < 0)
+    {
+        printf("    复制编码参数到流中失败\n");
+
+    }
+
+    //打开解码器
+    ret = avcodec_open2(decoder_ctx.codec_ctx, decodec, NULL);
+    if(ret < 0)
+    {
+        printf("    打开解码器失败\n");
+        return;
+    }
+
+    decoder_ctx.frame = av_frame_alloc();
+    decoder_ctx.pkt = av_packet_alloc();
+
+    decoder_ctx.frame->format = decoder_ctx.codec_ctx->pix_fmt;
+    decoder_ctx.frame->width  = decoder_ctx.codec_ctx->width;
+    decoder_ctx.frame->height = decoder_ctx.codec_ctx->height;
+    av_frame_get_buffer(decoder_ctx.frame, 32);
+
+    decoder_ctx.sws_ctx = sws_getContext(
+        decoder_ctx.codec_ctx->width,
+        decoder_ctx.codec_ctx->height,
+        decoder_ctx.codec_ctx->pix_fmt, // 当前解码器原生输出格式（YUV420P）
+        decoder_ctx.codec_ctx->width,
+        decoder_ctx.codec_ctx->height,
+        AV_PIX_FMT_NV12, // 目标格式NV12
+        SWS_FAST_BILINEAR, NULL, NULL, NULL
+    );
+
+    printf("解码器初始化完成\n");
+}
+
+
+
+void decoder(uint8_t first, unsigned char ** buf)
+{
+    printf("2. 开始解码\n");
+
+    int ret;
+    *buf = NULL;
+
+    ret = av_read_frame(decoder_ctx.fmt_ctx, decoder_ctx.pkt);
+    if (ret < 0) {
+        printf("   读取帧EOF\n");
+        av_packet_unref(decoder_ctx.pkt);
+        return;
+    }
+    printf("   发送包给解码器成功\n");
+
+    ret = avcodec_send_packet(decoder_ctx.codec_ctx, decoder_ctx.pkt);
+    while(ret >= 0)
+    {
+        printf("    解码一帧\n");
+
+
+        ret = avcodec_receive_frame(decoder_ctx.codec_ctx, decoder_ctx.frame);
+        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+        {
+            av_packet_unref(decoder_ctx.pkt);
+            return;
+        }
+        else if (ret < 0)
+        {
+            printf("    接收frame失败\n");
+            return;
+        }
+
+        AVFrame *nv12_frame = av_frame_alloc();
+        nv12_frame->format = AV_PIX_FMT_NV12;
+        nv12_frame->width  = decoder_ctx.frame->width;
+        nv12_frame->height = decoder_ctx.frame->height;
+        av_frame_get_buffer(nv12_frame, 32);
+        sws_scale(
+            decoder_ctx.sws_ctx,
+            decoder_ctx.frame->data,
+            decoder_ctx.frame->linesize,
+            0, decoder_ctx.codec_ctx->height,
+            nv12_frame->data,
+            nv12_frame->linesize
+        );
+
+//        *buf = decoder_ctx.frame->data[0];
+//        av_image_copy_to_buffer(
+//            *buf,
+//            VIDEO_WIDTH * VIDEO_HEIGHT * 3 / 2,
+//            decoder_ctx.frame->data,
+//            decoder_ctx.frame->linesize,  // 自动处理对齐
+//            AV_PIX_FMT_NV12,
+//            VIDEO_WIDTH, VIDEO_HEIGHT, 1
+//        );
+
+        printf("Frame pixel format: %s\n", av_get_pix_fmt_name((enum AVPixelFormat)decoder_ctx.frame->format));
+
+        int total_size = VIDEO_WIDTH * VIDEO_HEIGHT * 3 / 2;
+        unsigned char *nv12_buf = (unsigned char*)malloc(total_size);
+
+        // 把 FFmpeg 带对齐的数据 → 拷贝成连续标准 NV12
+        av_image_copy_to_buffer(
+            nv12_buf,
+            total_size,
+            nv12_frame->data,
+            nv12_frame->linesize,
+            AV_PIX_FMT_NV12,
+            VIDEO_WIDTH, VIDEO_HEIGHT, 1
+        );
+
+        // 输出标准 NV12
+        *buf = nv12_buf;
+
+        if(first)
+        {
+            printf("    first退出解码\n");
+            break;
+        }
+    }
+    //释放包
+    av_packet_unref(decoder_ctx.pkt);
+}
+
+
+void decode_close()
+{
+    av_frame_unref(decoder_ctx.frame);
+
+    sws_freeContext(decoder_ctx.sws_ctx);
+    decoder_ctx.sws_ctx = NULL;
+
+    avcodec_close(decoder_ctx.codec_ctx);
+    decoder_ctx.codec_ctx = NULL;
+
+    av_frame_free(&decoder_ctx.frame);
+    decoder_ctx.frame = NULL;
+
+    av_packet_free(&decoder_ctx.pkt);
+    decoder_ctx.pkt = NULL;
+
+    avformat_close_input(&decoder_ctx.fmt_ctx);
+    decoder_ctx.fmt_ctx = NULL;
+}
+
 
 

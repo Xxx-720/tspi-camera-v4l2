@@ -30,7 +30,7 @@ public:
     cam(QWidget *parent = nullptr);
     ~cam();
 
-
+    CameraThread* m_camThread;
 
 private slots:
     void save_pic(int id, const QImage &image);
@@ -66,12 +66,14 @@ private:
     int frame_count = 0;
     int fps;
 
-    CameraThread* m_camThread;
+
     QImage m_lastframe;
 
 //    bool m_recording = false;
 
     RecordThread* m_recordThread;
+
+    VideoPlayThread* m_videoPlayThread;
 
 };
 #endif // CAM_H

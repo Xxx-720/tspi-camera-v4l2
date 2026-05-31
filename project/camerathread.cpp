@@ -23,7 +23,7 @@ void CameraThread::stop()
 
 }
 
-void CameraThread::nv12_to_rgb(unsigned char* nv12, QImage &rgb)
+void nv12_to_rgb(unsigned char* nv12, QImage &rgb)
 {
     //Y分量的起始地址
     uint8_t* y = nv12;
@@ -61,6 +61,44 @@ void CameraThread::nv12_to_rgb(unsigned char* nv12, QImage &rgb)
     }
 
 }
+//void CameraThread::nv12_to_rgb(unsigned char* nv12, QImage &rgb)
+//{
+//    //Y分量的起始地址
+//    uint8_t* y = nv12;
+//    //VU分量的起始地址
+//    uint8_t* vu = nv12 + IMG_HIGHT*IMG_WIDTH;
+//    uint8_t* dst = rgb.bits();
+
+//    //每一行
+//    for(int i=0; i<IMG_HIGHT; i++)
+//    {
+//        //每一列
+//        for(int j=0; j<IMG_WIDTH; j++)
+//        {
+//            //现在是第几行的哪个Y分量
+//            int yy = y[i*IMG_WIDTH + j];
+//            //U分量
+//            int u = vu[(i/2)*(IMG_WIDTH/2)*2 + (j/2)*2] - 128;
+//            //V分量
+//            int v = vu[(i/2)*(IMG_WIDTH/2)*2 + (j/2)*2 + 1] - 128;
+
+//            //公式
+//            int r = yy + 1.370705f * v;
+//            int g = yy - 0.698001f * v - 0.337633f * u;
+//            int b = yy + 1.732446f * u;
+
+//            r = qBound(0, r, 255);
+//            g = qBound(0, g, 255);
+//            b = qBound(0, b, 255);
+
+//            *dst++ = r;
+//            *dst++ = g;
+//            *dst++ = b;
+
+//        }
+//    }
+
+//}
 
 void CameraThread::run()
 {
@@ -163,7 +201,85 @@ void RecordThread::run()
 
 
 
+/* ============ PlayThread================== */
+/* =========================================== */
+VideoPlayThread::VideoPlayThread(CameraThread* camThread)
+{
+    m_camThread = camThread;
+}
 
+void VideoPlayThread::startPlay(const QString &filePath)
+{
+    m_playing = true;
+    m_filePath = filePath;
+
+    start();
+}
+
+
+void VideoPlayThread::stopPlay()
+{
+    m_playing = false;
+    wait();
+    decode_close();
+    if(mp4_data)
+    {
+        free(mp4_data);
+        mp4_data = nullptr;
+    }
+
+}
+
+QImage VideoPlayThread::albumFirstFrame(QString path)
+{
+    QImage FirstFrame(IMG_WIDTH, IMG_HIGHT, QImage::Format_RGB888);
+    unsigned char* data = nullptr;
+    decoder_init(path.toLocal8Bit().data());
+
+    printf("decoder_init结束，decoder开始\n");
+
+    decoder(1, &data);
+    if(data)
+    {
+        printf("    nv12转rgb\n");
+        nv12_to_rgb(data, FirstFrame);
+        free(data);
+    }
+    printf("    nv12结束\n");
+    decode_close();
+    printf("    albumFirstFrame结束\n");
+
+    return FirstFrame;
+}
+
+
+void VideoPlayThread::run()
+{
+    printf("********VideoPlayThread线程启动********\n");
+
+    decoder_init(m_filePath.toLocal8Bit().data());
+
+    QImage frame(IMG_WIDTH, IMG_HIGHT, QImage::Format_RGB888);
+
+    printf("    开始播放\n");
+
+    while(m_playing)
+    {
+        decoder(0, &mp4_data);
+        if(mp4_data == NULL)
+        {
+            printf("    最后一帧\n");
+            m_playing = false;
+            break;
+        }
+        nv12_to_rgb(mp4_data, frame);
+        free(mp4_data);
+        mp4_data = nullptr;
+        emit playReady(frame);
+    }
+
+    printf("********VideoPlayThread线程结束********\n");
+}
 
 
 

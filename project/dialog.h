@@ -37,6 +37,7 @@ private:
     QLabel* imgLabel = nullptr;
     QString current_img_path;
     QPushButton *btn = nullptr;
+
 };
 
 #endif // DIALOG_H
