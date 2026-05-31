@@ -76,6 +76,7 @@ private:
 
     CameraThread* m_camThread;
 
+    struct ffmpeg_ctx* decoder_ctx;
 
     bool video_album_save = false;
 signals:

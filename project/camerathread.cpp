@@ -221,7 +221,7 @@ void VideoPlayThread::stopPlay()
 {
     m_playing = false;
     wait();
-    decode_close();
+//    decode_close(decoder_ctx);
     if(mp4_data)
     {
         free(mp4_data);
@@ -234,11 +234,12 @@ QImage VideoPlayThread::albumFirstFrame(QString path)
 {
     QImage FirstFrame(IMG_WIDTH, IMG_HIGHT, QImage::Format_RGB888);
     unsigned char* data = nullptr;
-    decoder_init(path.toLocal8Bit().data());
+
+    struct ffmpeg_ctx* tmp_ctx = decoder_init(path.toLocal8Bit().data());
 
     printf("decoder_init结束，decoder开始\n");
 
-    decoder(1, &data);
+    decoder(1, &data, tmp_ctx);
     if(data)
     {
         printf("    nv12转rgb\n");
@@ -246,7 +247,7 @@ QImage VideoPlayThread::albumFirstFrame(QString path)
         free(data);
     }
     printf("    nv12结束\n");
-    decode_close();
+    decode_close(tmp_ctx);
     printf("    albumFirstFrame结束\n");
 
     return FirstFrame;
@@ -257,7 +258,7 @@ void VideoPlayThread::run()
 {
     printf("********VideoPlayThread线程启动********\n");
 
-    decoder_init(m_filePath.toLocal8Bit().data());
+    decoder_ctx = decoder_init(m_filePath.toLocal8Bit().data());
 
     QImage frame(IMG_WIDTH, IMG_HIGHT, QImage::Format_RGB888);
 
@@ -265,9 +266,14 @@ void VideoPlayThread::run()
 
     while(m_playing)
     {
-        decoder(0, &mp4_data);
+        decoder(0, &mp4_data, decoder_ctx);
         if(mp4_data == NULL)
         {
+//            avcodec_send_packet(decoder_ctx->codec_ctx, NULL);
+//            AVFrame* tmp_frame = av_frame_alloc();
+//            while (avcodec_receive_frame(decoder_ctx->codec_ctx, tmp_frame) == 0) {}
+//            av_frame_free(&tmp_frame);
+
             printf("    最后一帧\n");
             m_playing = false;
             break;
@@ -276,7 +282,11 @@ void VideoPlayThread::run()
         free(mp4_data);
         mp4_data = nullptr;
         emit playReady(frame);
+
+        QThread::msleep(1);
     }
+
+    decode_close(decoder_ctx);
 
     printf("********VideoPlayThread线程结束********\n");
 }

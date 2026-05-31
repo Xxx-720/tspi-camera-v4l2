@@ -39,9 +39,13 @@ void encoder(unsigned char *buf);
 void encode_close();
 
 
-void decoder_init(char* name);
-void decoder(uint8_t first, unsigned char ** buf);
-void decode_close();
+//void decoder_init(char* name);
+//void decoder(uint8_t first, unsigned char ** buf);
+//void decode_close();
+
+struct ffmpeg_ctx* decoder_init(char* name);
+void decoder(uint8_t first, unsigned char ** buf, struct ffmpeg_ctx* decoder_ctx);
+void decode_close(struct ffmpeg_ctx* decoder_ctx);
 
 #ifdef __cplusplus
 }

@@ -182,6 +182,15 @@ void Dialog::on_del_clicked()
         qDebug() << "还没选中图片" << endl;
         return;
     }
+
+    if(player)
+    {
+        player->stopPlay();
+//        player->wait();
+        delete player;
+        player = nullptr;
+    }
+
     //按下删除按钮删除该照片
     QFile file(current_img_path);
     if(file.exists() == false)
