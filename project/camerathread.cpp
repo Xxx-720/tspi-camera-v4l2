@@ -2,6 +2,8 @@
 #include "v4l2_app.h"
 #include "encoder.h"
 
+#include <rga/RgaApi.h>
+#include <rga/im2d.h>
 
 #define IMG_WIDTH 640
 #define IMG_HIGHT 480
@@ -23,42 +25,66 @@ void CameraThread::stop()
 
 }
 
-void nv12_to_rgb(unsigned char* nv12, QImage &rgb)
+bool nv12_to_rgb(unsigned char* nv12, QImage &rgb)
 {
-    //Y分量的起始地址
-    uint8_t* y = nv12;
-    //VU分量的起始地址
-    uint8_t* vu = nv12 + IMG_HIGHT*IMG_WIDTH;
-    uint8_t* dst = rgb.bits();
+//    //Y分量的起始地址
+//    uint8_t* y = nv12;
+//    //VU分量的起始地址
+//    uint8_t* vu = nv12 + IMG_HIGHT*IMG_WIDTH;
+//    uint8_t* dst = rgb.bits();
 
-    //每一行
-    for(int i=0; i<IMG_HIGHT; i++)
-    {
-        //每一列
-        for(int j=0; j<IMG_WIDTH; j++)
-        {
-            //现在是第几行的哪个Y分量
-            int yy = y[i*IMG_WIDTH + j];
-            //U分量
-            int u = vu[(i/2)*(IMG_WIDTH/2)*2 + (j/2)*2] - 128;
-            //V分量
-            int v = vu[(i/2)*(IMG_WIDTH/2)*2 + (j/2)*2 + 1] - 128;
+//    //每一行
+//    for(int i=0; i<IMG_HIGHT; i++)
+//    {
+//        //每一列
+//        for(int j=0; j<IMG_WIDTH; j++)
+//        {
+//            //现在是第几行的哪个Y分量
+//            int yy = y[i*IMG_WIDTH + j];
+//            //U分量
+//            int u = vu[(i/2)*(IMG_WIDTH/2)*2 + (j/2)*2] - 128;
+//            //V分量
+//            int v = vu[(i/2)*(IMG_WIDTH/2)*2 + (j/2)*2 + 1] - 128;
 
-            //公式
-            int r = yy + 1.370705f * v;
-            int g = yy - 0.698001f * v - 0.337633f * u;
-            int b = yy + 1.732446f * u;
+//            //公式
+//            int r = yy + 1.370705f * v;
+//            int g = yy - 0.698001f * v - 0.337633f * u;
+//            int b = yy + 1.732446f * u;
 
-            r = qBound(0, r, 255);
-            g = qBound(0, g, 255);
-            b = qBound(0, b, 255);
+//            r = qBound(0, r, 255);
+//            g = qBound(0, g, 255);
+//            b = qBound(0, b, 255);
 
-            *dst++ = r;
-            *dst++ = g;
-            *dst++ = b;
+//            *dst++ = r;
+//            *dst++ = g;
+//            *dst++ = b;
 
-        }
+//        }
+//    }
+
+
+    // 老版驱动直接用虚拟地址包装，不导入 handle
+    rga_buffer_t src = wrapbuffer_virtualaddr(nv12, 640, 480,
+                                               RK_FORMAT_YCbCr_420_SP,
+                                               640,   // wstride
+                                               480);  // hstride
+    unsigned char* rgb_buf =rgb.bits();
+    rga_buffer_t dst = wrapbuffer_virtualaddr(rgb_buf, 640, 480,
+                                               RK_FORMAT_RGB_888,
+                                               640,  // wstride: RGB888 = width*3
+                                               480);
+
+    // 老版可能没有 imcheck，直接调用
+    IM_STATUS ret = imcvtcolor(src, dst,
+                               RK_FORMAT_YCbCr_420_SP,
+                               RK_FORMAT_RGB_888,
+                               IM_YUV_TO_RGB_BT601_LIMIT);
+
+    if (ret != IM_STATUS_SUCCESS) {
+//        qDebug() << "RGA convert failed:" << imStrError(ret);
+        return false;
     }
+    return true;
 
 }
 //void CameraThread::nv12_to_rgb(unsigned char* nv12, QImage &rgb)
@@ -283,7 +309,7 @@ void VideoPlayThread::run()
         mp4_data = nullptr;
         emit playReady(frame);
 
-        QThread::msleep(1);
+//        QThread::msleep(1);
     }
 
     decode_close(decoder_ctx);

@@ -13,7 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-
+#include <rga/RgaApi.h>
+#include <rga/im2d.h>
 
 #define VIDEO_WIDTH      640
 #define VIDEO_HEIGHT     480
@@ -335,7 +336,7 @@ struct ffmpeg_ctx* decoder_init(char* name)
 
     //获取对应流的编码参数，以此找到对于的解码器
     AVCodecParameters* codec_parame = decoder_ctx->fmt_ctx->streams[decoder_ctx->video_index]->codecpar;
-    AVCodec* decodec = avcodec_find_decoder(codec_parame->codec_id);
+    AVCodec* decodec = avcodec_find_decoder_by_name("h264_rkmpp"); //codec_parame->codec_id
 
     decoder_ctx->codec_ctx = avcodec_alloc_context3(decodec);
     if(!decoder_ctx->codec_ctx)
@@ -358,10 +359,13 @@ struct ffmpeg_ctx* decoder_init(char* name)
         printf("    打开解码器失败\n");
         return;
     }
+    printf("Decoder: %s\n", decoder_ctx->codec_ctx->codec->name);
 
     decoder_ctx->frame = av_frame_alloc();
     decoder_ctx->pkt = av_packet_alloc();
-
+    // 解码后打印格式
+    printf("MPP decode format: %s\n",
+           av_get_pix_fmt_name((enum AVPixelFormat)decoder_ctx->codec_ctx->pix_fmt));
     decoder_ctx->frame->format = decoder_ctx->codec_ctx->pix_fmt;
     decoder_ctx->frame->width  = decoder_ctx->codec_ctx->width;
     decoder_ctx->frame->height = decoder_ctx->codec_ctx->height;
@@ -370,7 +374,7 @@ struct ffmpeg_ctx* decoder_init(char* name)
     decoder_ctx->sws_ctx = sws_getContext(
         decoder_ctx->codec_ctx->width,
         decoder_ctx->codec_ctx->height,
-        decoder_ctx->codec_ctx->pix_fmt, // 当前解码器原生输出格式（YUV420P）
+        decoder_ctx->codec_ctx->pix_fmt, // 当前解码器原生输出格式（NV12）
         decoder_ctx->codec_ctx->width,
         decoder_ctx->codec_ctx->height,
         AV_PIX_FMT_NV12, // 目标格式NV12
@@ -379,97 +383,235 @@ struct ffmpeg_ctx* decoder_init(char* name)
 
     printf("解码器初始化完成\n");
 
+
+
     return decoder_ctx;
 }
 
 
 
+//void decoder(uint8_t first, unsigned char ** buf, struct ffmpeg_ctx* decoder_ctx)
+//{
+//    printf("2. 开始解码\n");
+
+//    int ret;
+//    *buf = NULL;
+
+//    while(1)
+//    {
+//        printf("    解码一帧\n");
+
+//        ret = av_read_frame(decoder_ctx->fmt_ctx, decoder_ctx->pkt);
+//        if (ret < 0) {
+//            printf("   读取帧EOF\n");
+//            avcodec_send_packet(decoder_ctx->codec_ctx, NULL);
+//            break;
+//        }
+//        if(decoder_ctx->pkt->stream_index == decoder_ctx->video_index) break;
+
+//        av_packet_unref(decoder_ctx->pkt);
+
+//        printf("   发送包给解码器成功\n");
+//    }
+//    if(ret >= 0)
+//    {
+//        avcodec_send_packet(decoder_ctx->codec_ctx, decoder_ctx->pkt);
+//        av_packet_unref(decoder_ctx->pkt);
+//    }
+//        ret = avcodec_receive_frame(decoder_ctx->codec_ctx, decoder_ctx->frame);
+//        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+//        {
+//            return;
+//        }
+//        else if (ret < 0)
+//        {
+//            printf("    接收frame失败\n");
+//            return;
+//        }
+
+//        int w = decoder_ctx->frame->width;
+//        int h = decoder_ctx->frame->height;
+
+//        // h264_rkmpp 输出 NV12，data[0]=Y, data[1]=UV（交错）
+//        uint8_t* src_y = decoder_ctx->frame->data[0];
+//        uint8_t* src_uv = decoder_ctx->frame->data[1];
+//        int y_stride = decoder_ctx->frame->linesize[0];
+//        int uv_stride = decoder_ctx->frame->linesize[1];
+
+//        printf("format=%s, w=%d, h=%d, y_stride=%d, uv_stride=%d\n",
+//               av_get_pix_fmt_name((enum AVPixelFormat)decoder_ctx->frame->format),
+//               w, h, y_stride, uv_stride);
+
+//        // 分配连续内存，拷贝 Y + UV
+//        int y_size = w * h;
+//        int uv_size = w * h / 2;
+//        int total = y_size + uv_size;
+//        unsigned char* nv12 = (unsigned char*)malloc(total);
+
+//        // 拷贝 Y 平面（处理 stride 对齐）
+//        for (int i = 0; i < h; i++) {
+//            memcpy(nv12 + i * w, src_y + i * y_stride, w);
+//        }
+
+//        // 拷贝 UV 平面（处理 stride 对齐）
+//        for (int i = 0; i < h / 2; i++) {
+//            memcpy(nv12 + y_size + i * w, src_uv + i * uv_stride, w);
+//        }
+
+//        *buf = nv12;
+
+////        if(first)
+////        {
+////            printf("    first退出解码\n");
+////            return;
+////        }
+////        av_frame_unref(decoder_ctx->frame);
+//////        av_frame_free(&nv12_frame);
+////        //释放包
+////        av_packet_unref(decoder_ctx->pkt);
+
+
+////    int ret;
+////    *buf = NULL;
+
+////    ret = av_read_frame(decoder_ctx->fmt_ctx, decoder_ctx->pkt);
+////    if (ret < 0) { av_packet_unref(decoder_ctx->pkt); return; }
+
+////    ret = avcodec_send_packet(decoder_ctx->codec_ctx, decoder_ctx->pkt);
+////    while(ret >= 0)
+////    {
+////        ret = avcodec_receive_frame(decoder_ctx->codec_ctx, decoder_ctx->frame);
+////        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) break;
+////        if (ret < 0) break;
+
+////        int w = decoder_ctx->frame->width;
+////        int h = decoder_ctx->frame->height;
+
+////        // FFmpeg 输出的是 YUV420P
+////        uint8_t* y = decoder_ctx->frame->data[0];
+////        uint8_t* u = decoder_ctx->frame->data[1];
+////        uint8_t* v = decoder_ctx->frame->data[2];
+////        int y_stride = decoder_ctx->frame->linesize[0];
+////        int u_stride = decoder_ctx->frame->linesize[1];
+////        int v_stride = decoder_ctx->frame->linesize[2];
+
+////        // ========== 方案 C：手动 YUV420P → NV12（比 sws_scale 快）==========
+////        int nv12_size = w * h * 3 / 2;
+////        unsigned char* nv12_buf = (unsigned char*)malloc(nv12_size);
+
+////        // Y 平面
+////        for (int i = 0; i < h; i++) {
+////            memcpy(nv12_buf + i * w, y + i * y_stride, w);
+////        }
+
+////        // UV 平面（交错）
+////        uint8_t* dst_uv = nv12_buf + w * h;
+////        for (int i = 0; i < h / 2; i++) {
+////            for (int j = 0; j < w / 2; j++) {
+////                dst_uv[i * w + j * 2] = u[i * u_stride + j];
+////                dst_uv[i * w + j * 2 + 1] = v[i * v_stride + j];
+////            }
+////        }
+
+////        // ========== RGA 硬件 NV12 → RGB ==========
+//////        int rgb_size = w * h * 3;
+//////        unsigned char* rgb_buf = (unsigned char*)malloc(rgb_size);
+
+//////        if (nv12_to_rgb_rga(nv12_buf, rgb_buf, w, h)) {
+//////            *buf = rgb_buf;
+//////            free(nv12_buf);  // RGA 用完释放 NV12
+//////        } else {
+//////            // RGA 失败，回退软转换
+//////            free(rgb_buf);
+//////            *buf = nv12_buf;  // 返回 NV12，上层自己处理
+//////        }
+
+////        *buf = nv12_buf;
+
+////        if (first) break;
+////        av_frame_unref(decoder_ctx->frame);
+////        av_packet_unref(decoder_ctx->pkt);
+////    }
+
+
+
+
+//}
+
+
 void decoder(uint8_t first, unsigned char ** buf, struct ffmpeg_ctx* decoder_ctx)
 {
     printf("2. 开始解码\n");
-
-    int ret;
     *buf = NULL;
-
-    ret = av_read_frame(decoder_ctx->fmt_ctx, decoder_ctx->pkt);
-    if (ret < 0) {
-        printf("   读取帧EOF\n");
-        av_packet_unref(decoder_ctx->pkt);
-        return;
-    }
-    printf("   发送包给解码器成功\n");
-
-    ret = avcodec_send_packet(decoder_ctx->codec_ctx, decoder_ctx->pkt);
-    while(ret >= 0)
+    int w, h, y_stride, uv_stride;
+    uint8_t *src_y, *src_uv;
+    while (1)
     {
-        printf("    解码一帧\n");
+        // 1. 读一个 packet
+        int ret = av_read_frame(decoder_ctx->fmt_ctx, decoder_ctx->pkt);
+        if (ret < 0) {
+            printf("   读取帧EOF，flush解码器\n");
+            avcodec_send_packet(decoder_ctx->codec_ctx, NULL);  // flush
 
-
-        ret = avcodec_receive_frame(decoder_ctx->codec_ctx, decoder_ctx->frame);
-        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
-        {
-            break;
-        }
-        else if (ret < 0)
-        {
-            printf("    接收frame失败\n");
-            break;
+            // 尝试收最后一帧
+            ret = avcodec_receive_frame(decoder_ctx->codec_ctx, decoder_ctx->frame);
+            if (ret == 0) goto got_frame;  // 收到最后一帧
+            return;  // 真的结束了
         }
 
-        AVFrame *nv12_frame = av_frame_alloc();
-        nv12_frame->format = AV_PIX_FMT_NV12;
-        nv12_frame->width  = decoder_ctx->frame->width;
-        nv12_frame->height = decoder_ctx->frame->height;
-        av_frame_get_buffer(nv12_frame, 32);
-        sws_scale(
-            decoder_ctx->sws_ctx,
-            decoder_ctx->frame->data,
-            decoder_ctx->frame->linesize,
-            0, decoder_ctx->codec_ctx->height,
-            nv12_frame->data,
-            nv12_frame->linesize
-        );
-
-//        *buf = decoder_ctx->frame->data[0];
-//        av_image_copy_to_buffer(
-//            *buf,
-//            VIDEO_WIDTH * VIDEO_HEIGHT * 3 / 2,
-//            decoder_ctx->frame->data,
-//            decoder_ctx->frame->linesize,  // 自动处理对齐
-//            AV_PIX_FMT_NV12,
-//            VIDEO_WIDTH, VIDEO_HEIGHT, 1
-//        );
-
-//        printf("Frame pixel format: %s\n", av_get_pix_fmt_name((enum AVPixelFormat)decoder_ctx->frame->format));
-
-        int total_size = VIDEO_WIDTH * VIDEO_HEIGHT * 3 / 2;
-        unsigned char *nv12_buf = (unsigned char*)malloc(total_size);
-
-        // 把 FFmpeg 带对齐的数据 → 拷贝成连续标准 NV12
-        av_image_copy_to_buffer(
-            nv12_buf,
-            total_size,
-            nv12_frame->data,
-            nv12_frame->linesize,
-            AV_PIX_FMT_NV12,
-            VIDEO_WIDTH, VIDEO_HEIGHT, 1
-        );
-
-        // 输出标准 NV12
-        *buf = nv12_buf;
-
-        if(first)
-        {
-            printf("    first退出解码\n");
-            break;
+        if (decoder_ctx->pkt->stream_index != decoder_ctx->video_index) {
+            av_packet_unref(decoder_ctx->pkt);
+            continue;  // 跳过非视频
         }
-        av_frame_unref(decoder_ctx->frame);
-        av_frame_free(&nv12_frame);
-        //释放包
+
+        // 2. 发送 packet
+        printf("   发送视频packet\n");
+        ret = avcodec_send_packet(decoder_ctx->codec_ctx, decoder_ctx->pkt);
         av_packet_unref(decoder_ctx->pkt);
-    }
-}
 
+        // 3. 尝试接收 frame（硬件解码器可能需要多个 packet 才出帧）
+        ret = avcodec_receive_frame(decoder_ctx->codec_ctx, decoder_ctx->frame);
+        if (ret == AVERROR(EAGAIN)) {
+            printf("    EAGAIN，继续读下一个packet\n");
+            continue;  // ← 关键：继续循环读 packet，不是 return！
+        }
+        if (ret == AVERROR_EOF) {
+            printf("    EOF\n");
+            return;
+        }
+        if (ret < 0) {
+            printf("    接收frame失败\n");
+            return;
+        }
+
+        // 成功拿到帧
+        goto got_frame;
+    }
+
+got_frame:
+    // 4. 拷贝 NV12
+    w = decoder_ctx->frame->width;
+    h = decoder_ctx->frame->height;
+    src_y = decoder_ctx->frame->data[0];
+    src_uv = decoder_ctx->frame->data[1];
+    y_stride = decoder_ctx->frame->linesize[0];
+    uv_stride = decoder_ctx->frame->linesize[1];
+
+    printf("    拿到帧！%dx%d, y_stride=%d, uv_stride=%d\n", w, h, y_stride, uv_stride);
+
+    int total = w * h * 3 / 2;
+    unsigned char* nv12 = (unsigned char*)malloc(total);
+
+    for (int i = 0; i < h; i++) {
+        memcpy(nv12 + i * w, src_y + i * y_stride, w);
+    }
+    for (int i = 0; i < h / 2; i++) {
+        memcpy(nv12 + w * h + i * w, src_uv + i * uv_stride, w);
+    }
+
+    *buf = nv12;
+    av_frame_unref(decoder_ctx->frame);
+}
 
 void decode_close(struct ffmpeg_ctx* decoder_ctx)
 {

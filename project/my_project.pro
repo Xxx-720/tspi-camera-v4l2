@@ -62,7 +62,8 @@ DISTFILES += \
 
 #change
 INCLUDEPATH += /opt/aarch64-ffmpeg/include \
-               /opt/aarch64-libs/include
+               /opt/aarch64-libs/include \
+               /home/master/rkrga/include
 
 LIBS += -L/opt/aarch64-ffmpeg/lib \
         -L/opt/aarch64-libs/lib \
@@ -76,6 +77,7 @@ LIBS += -L/opt/aarch64-ffmpeg/lib \
         -pthread \
         -lm \
         -ldl \
-        -ldrm
+        -ldrm \
+        -lrga
 
 
